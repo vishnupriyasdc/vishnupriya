@@ -1,0 +1,128 @@
+from datetime import datetime
+import smtplib
+from email.mime.text import MIMEText
+
+def display_items():
+    items_list = '''
+    rice       RS 20/kg
+    dhal       RS 60/kg
+    chocolate  RS 40/each
+    cookies    RS 25/each
+    wheat      RS 30/kg
+    greens     RS 10/bunch
+    oil        RS 90/liter
+    '''
+    print(items_list)
+
+def calculate_gst(total_price):
+    return (total_price * 5) / 100
+
+def generate_bill(name, items, quantities, prices, total_price, gst, final_amount):
+    bill = []
+    bill.append(25 * " **" + "Greens Supermarket" + 25 * "** ")
+    bill.append(28 * " " + "Manjakkudi")
+    bill.append(f"name: {name}" + 30 * " " + f"date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    bill.append(75 * " ")
+    bill.append("sno" + 8 * " " + "items" + 8 * " " + "quantity" + 3 * " " + "price")
+    
+    for i, (item, quantity, price) in enumerate(zip(items, quantities, prices)):
+        bill.append(f"{i+1}" + 8 * " " + f"{item}" + 8 * " " + f"{quantity}" + 3 * " " + f"{price}")
+    
+    bill.append(75 * " - ")
+    bill.append(50 * " " + 'total amount:' + ' RS ' + str(total_price))
+    bill.append(50 * " " + 'GST (5%):' + ' RS ' + str(gst))
+    bill.append(50 * " " + 'Final Amount:' + ' RS ' + str(final_amount))
+    bill.append(75 * " -")
+    bill.append(50 * " " + "thanks for visiting")
+    bill.append(75 * "-")
+    
+    return "\n".join(bill)
+
+def purchase_items():
+    items = {
+        'rice': 20,
+        'dhal': 60,
+        'chocolate': 40,
+        'cookies': 25,
+        'wheat': 30,
+        'greens': 10,
+        'oil': 90
+    }
+
+    total_price = 0
+    item_list = []
+    quantity_list = []
+    price_list_individual = []
+
+    while True:
+        try:
+            inp = int(input("If you want to buy press 1 or 2 for exit: "))
+            if inp == 2:
+                break
+            elif inp == 1:
+                item = input("Enter your item: ").lower()
+                quantity = int(input("Enter quantity: "))
+                if item in items:
+                    price = quantity * items[item]
+                    total_price += price
+                    item_list.append(item)
+                    quantity_list.append(quantity)
+                    price_list_individual.append(price)
+                else:
+                    print("Sorry, the item you entered is not available.")
+            else:
+                print("Invalid input, please try again.")
+        except ValueError:
+            print("Invalid input, please enter numeric values where expected.")
+    
+    gst = calculate_gst(total_price)
+    final_amount = gst + total_price
+    
+    return item_list, quantity_list, price_list_individual, total_price, gst, final_amount
+
+def send_email(receipt, customer_email):
+    sender_email = "your_email@example.com"  # Replace with your email
+    sender_password = "your_password"        # Replace with your email password
+
+    msg = MIMEText(receipt)
+    msg['Subject'] = 'Supermarket Bill'
+    msg['From'] = sender_email
+    msg['To'] = customer_email
+
+    try:
+        with smtplib.SMTP_SSL('smtp.example.com', 465) as server:  # Replace with your SMTP server
+            server.login(sender_email, sender_password)
+            server.sendmail(sender_email, customer_email, msg.as_string())
+        print("Email sent successfully!")
+    except Exception as e:
+        print(f"Failed to send email: {e}")
+
+def main():
+    name = input("Enter your name: ")
+
+    try:
+        option = int(input("For list of items press 1: "))
+        if option == 1:
+            display_items()
+    except ValueError:
+        print("Invalid input, expected a numeric value.")
+
+    item_list, quantity_list, price_list_individual, total_price, gst, final_amount = purchase_items()
+
+    inp = input("Can I bill the items (yes or no): ").lower()
+    if inp == 'yes':
+        bill = generate_bill(name, item_list, quantity_list, price_list_individual, total_price, gst, final_amount)
+        print(bill)
+        
+        # Email functionality
+        customer_email = input("Enter your email address to receive the bill: ")
+        send_email(bill, customer_email)
+        
+        email_content = f"Subject: Your Purchase Bill\n\n{bill}"
+        print("\nEmail Content:\n")
+        print(email_content)
+    else:
+        print("Thank you! Visit again.")
+
+if __name__ == "__main__":
+    main()
